@@ -20,7 +20,13 @@
 - Branch confirmed
 - Force push avoided unless user explicitly asks
 
+## Manual Action Boundary
+- This skill does not run `git add`, `git commit`, or `git push`
+- This skill must not attempt auto-commit or auto-push in any scenario
+- User must manually execute git commands after review
+
 ## Final Summary
 - What changed
 - What was validated
 - Known residual risks
+- Final reminder to user: review files, branch, and remote before commit/push

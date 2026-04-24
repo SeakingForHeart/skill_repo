@@ -1,4 +1,6 @@
 type(scope): short summary
+> `type` must be one of: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`; `scope` is optional and represents the impacted module/layer.
+> Draft-only output: this skill must not execute `git add`, `git commit`, or `git push`.
 
 Why:
 - reason 1
