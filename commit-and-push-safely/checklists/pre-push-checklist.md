@@ -13,6 +13,8 @@
 ## Commit Quality
 - Commit scope is minimal and coherent
 - Commit message matches actual diff
+- Commit message keeps template labels and section order exactly
+- No template section is omitted; empty sections use explicit placeholder bullets
 - Breaking changes clearly stated
 
 ## Push Safety
@@ -29,4 +31,5 @@
 - What changed
 - What was validated
 - Known residual risks
+- Template compliance status
 - Final reminder to user: review files, branch, and remote before commit/push
