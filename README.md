@@ -18,6 +18,7 @@ Claude Code 技能集合中心 - 一套专为安全优先原则设计的可复�
 - 结构化提交信息模板（`Why / What changed / Validation / Notes`）
 - 推送前清单式最终验证
 - 手动交接工作流确保用户完全控制
+- 可执行只读运行时（命令边界检查、变更采集、草稿生成、checklist 校验、输出审计）
 
 **安全保证**：绝不执行 `git add`、`git commit` 或 `git push`。用户完全掌控仓库修改操作。
 
@@ -40,6 +41,8 @@ Claude Code 技能集合中心 - 一套专为安全优先原则设计的可复�
 ├── checklists/             # 验证清单
 ├── templates/              # 输出模板
 ├── tests/                  # 测试规范
+├── runtime/                # 可执行只读运行时
+├── __tests__/              # 自动化测试
 └── reference/              # 参考文档
 ```
 

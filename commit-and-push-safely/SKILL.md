@@ -9,6 +9,12 @@ argument-hint: "Describe the review scope and desired subject wording. Output mu
 ## Goal
 Provide a consistent, low-risk workflow for checking repository changes and writing commit-ready outputs without executing git write actions.
 
+## Runtime Implementation
+- This skill now includes executable read-only runtime modules under `commit-and-push-safely/runtime/`.
+- Runtime coverage includes git command boundary enforcement, repository change collection, commit draft rendering, checklist validation, and output auditing.
+- A CLI entry point can compile and emit structured JSON artifacts for report / draft / checklist / audit consumption.
+- Human / LLM judgment is still required for commit scope decisions, semantic subject wording, breaking-change assessment, and choosing the narrowest relevant validation command.
+
 ## Execution Boundary
 - This skill is check-and-write only.
 - It must never attempt `git add`, `git commit`, or `git push`.
@@ -40,8 +46,8 @@ Only these git commands are permitted:
 - Other read-only git commands that do not modify state
 
 ### Runtime Enforcement
-1. **Pre-execution check**: Before invoking Bash, verify the command does not match forbidden patterns
-2. **Output audit**: After generating output, scan for any accidentally included git write commands
+1. **Pre-execution check**: Before invoking Bash, the runtime command classifier must verify the command does not match forbidden patterns
+2. **Output audit**: After generating output, the runtime auditor must scan for accidentally included git write commands or auto-execution phrasing
 3. **User request rejection**: If user explicitly requests auto-commit/push, refuse and explain manual handoff policy
 4. **Stop on violation**: If any forbidden operation is detected, immediately halt and report error
 

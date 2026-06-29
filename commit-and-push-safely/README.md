@@ -9,6 +9,7 @@
 - 按统一模板输出 `Why / What changed / Validation / Notes`
 - 在推送前执行清单式核对，降低误提交流程风险
 - 提供手动交接结果，提醒用户自行执行 Git 写操作
+- 新增可执行只读运行时：命令边界检查、变更采集、草稿渲染、checklist 校验、输出审计
 
 ## 安全边界（必须遵守）
 
@@ -35,26 +36,29 @@
 - 其他不修改仓库状态的查询命令
 
 #### 运行时强制机制
-1. **执行前检查**：调用 Bash 前验证命令不匹配禁止模式
-2. **输出审计**：生成输出后扫描是否意外包含 git 写命令
+1. **执行前检查**：运行时模块会对 git 命令做 allow/deny/gray-area 分类
+2. **输出审计**：生成输出后扫描是否意外包含 git 写命令或自动执行措辞
 3. **拒绝危险请求**：用户明确要求自动提交时拒绝并解释手动交接政策
 4. **违规即停止**：检测到任何禁止操作立即停止并报告错误
 
-#### 防御性提示
-当用户请求不安全操作时，skill 必须回复：
-```
-本 skill 无法执行 git 写操作。您必须手动执行：
-- git add <files>
-- git commit（使用提供的草稿）
-- git push <remote> <branch>
-``
+## 运行时实现
 
-## 适用场景
+新增目录：
+- `commit-and-push-safely/runtime/`：只读运行时实现
+- `commit-and-push-safely/__tests__/`：自动化测试
 
-- 提交前希望先做一次变更体检
-- 需要根据真实改动生成规范 commit message
-- 推送前需要结构化检查清单
-- 希望明确记录“做了什么、为什么做、如何验证”
+可执行入口：
+- 无需构建步骤：运行时为纯 CommonJS JavaScript，零 npm 依赖 / devDependencies
+- `npm run analyze -- <repoPath> [subject]`：直接运行 `runtime/cli.js`，输出结构化 report / draft / checklist / audit JSON
+- `npm test`：直接使用 Node 内置 `node:test` 与 `node:assert/strict` 运行自动化测试
+
+主要模块：
+- `runtime/enforce.js`：git 命令分类与只读边界断言
+- `runtime/collect.js`：变更采集与结构化 change report
+- `runtime/draft.js`：commit 草稿模板渲染
+- `runtime/validate.js`：checklist 规则校验
+- `runtime/audit.js`：输出审计
+- `runtime/cli.js`：聚合入口，输出 JSON 结果
 
 ## 输入与输出
 
@@ -68,52 +72,23 @@
 - 严格按模板生成的提交信息草稿
 - 实际执行过的校验结果摘要
 - 手动检查提醒与剩余风险说明
+- 结构化 report / checklist / audit 结果（用于程序化消费）
 
 ## 运作流程
 
 1. 检查当前仓库状态（分支、工作区、变更文件）
 2. **全面改动检测**：执行多个 git 命令确保捕获所有改动类型
-   - `git status` - 追踪文件、未追踪文件、删除文件
-   - `git diff` - 标准文本改动
-   - `git diff --stat` - 二进制文件改动（文件大小）
-   - `git diff --summary` - 文件权限、符号链接改动
-   - `git diff --submodule` - 子模块更新（如有）
-   - `git ls-files -s` - 已暂存文件的权限模式
 3. 审阅所有改动，按严重程度总结风险（含特殊改动类型警告）
 4. 运行最小必要校验并记录真实结果
 5. 给出建议提交文件集，若混入无关改动则停止
 6. 依据模板逐行生成提交信息草稿，包含所有检测到的改动类型
 7. 用预推送清单复核模板完整性与顺序一致性
-8. 在”准备输出”处硬停止，不触发任何 Git 写操作
-9. 提醒用户手动复核所有文件（含未追踪、二进制、权限改动）及分支/远端后再提交与推送
-
-## 改动检测范围
-
-标准 `git diff` 可能遗漏以下改动，本 skill 通过多命令组合确保全面捕获：
-
-- ✅ **未追踪文件**：新建空文件需先 `git add`
-- ✅ **文件权限**：`chmod` 改动（`git diff --summary`）
-- ✅ **二进制文件**：图片、编译产物（`git diff --stat`）
-- ✅ **空白字符**：空格/换行符改动（可能被编辑器隐藏）
-- ✅ **符号链接**：链接目标改动（`git diff --summary`）
-- ✅ **子模块**：子模块内容更新（`git diff --submodule`）
-- ✅ **Git 内部文件**：`.git/hooks`、`.git/config`（需手动检查）
-- ✅ **换行符转换**：CRLF/LF 转换（受 `core.autocrlf` 影响）
-- ✅ **大文件限制**：超大文件可能被截断
-- ✅ **Git 对象损坏**：`.git/objects` 损坏（需 `git fsck`）
-- ✅ **多工作树**：其他工作树的改动不可见
-- ✅ **外部 diff 工具**：可能过滤输出格式
-
-## Commit Message 规则（摘要）
-
-- 推荐主题格式：`type(scope): short summary`
-- `type` 仅允许：`feat` `fix` `docs` `style` `refactor` `test` `chore`
-- 主题行建议小于 72 字符，且与真实 diff 一致
-- 模板区块顺序必须固定：`Why` → `What changed` → `Validation` → `Notes`
-- 区块不可缺失：无内容用 `- None`；未执行校验写 `- Not run`（可附原因）
+8. 在“准备输出”处硬停止，不触发任何 Git 写操作
+9. 提醒用户手动复核所有文件及分支/远端后再提交与推送
 
 ## 相关文件
 
 - Skill 定义：`commit-and-push-safely/SKILL.md`
 - 预推送清单：`commit-and-push-safely/checklists/pre-push-checklist.md`
 - 提交模板：`commit-and-push-safely/templates/commit-message-template.md`
+- 运行时入口：`commit-and-push-safely/runtime/cli.js`
