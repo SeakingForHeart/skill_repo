@@ -1,0 +1,10 @@
+{
+  "name": "latest-diff-and-migration-guide-skill-runtime",
+  "private": true,
+  "version": "0.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test __tests__/*.test.js",
+    "analyze": "node runtime/cli.js"
+  }
+}

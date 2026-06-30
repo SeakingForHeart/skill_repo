@@ -4,14 +4,17 @@
 - Comparison target is explicit (branch head/tag/release/dependency latest)
 - Current baseline commit/version captured
 - Target commit/version captured
+- Commit range from current baseline to target captured
 
 ## Data Collection (Read-Only)
 - Repository diff collected (`git diff`/`git log`/`git show`)
+- Each commit in the current-to-latest range read with metadata and changed-file summary
 - Dependency manifests inspected
 - Outdated dependency list captured (ecosystem-specific)
 - Changelog/release notes checked when available
 
 ## Change Classification
+- Commit-by-commit impacts identified
 - Breaking changes identified
 - Behavior changes identified
 - New features identified

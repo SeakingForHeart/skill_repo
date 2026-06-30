@@ -5,6 +5,13 @@
 - Target latest: <commit/tag/version>
 - Scope: <repo paths or dependencies>
 
+## Commit-by-Commit Analysis
+- <commit hash> <subject>
+  - Author/date: <author/date or Unknown>
+  - Changed files/areas: <files or areas>
+  - Impact: <user-facing impact or None>
+  - Migration relevance: <required action, optional action, or None>
+
 ## Change Summary
 - Breaking changes:
   - <item or None>

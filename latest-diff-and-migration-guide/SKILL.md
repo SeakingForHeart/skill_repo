@@ -8,8 +8,16 @@ argument-hint: "Provide comparison target (same-branch latest commit, latest tag
 
 ## Goal
 Read version differences between the current workspace and a latest target (same-branch latest commit, latest tag/release, or latest dependency versions), then output:
-1) concise change summary, and
-2) required usage/migration updates after upgrading.
+1) commit-by-commit analysis from the current version to the latest version,
+2) concise change summary, and
+3) required usage/migration updates after upgrading.
+
+## Runtime Implementation
+- This skill includes executable read-only runtime modules under `latest-diff-and-migration-guide/runtime/`.
+- Runtime coverage includes command boundary enforcement, target resolution, commit-range collection, dependency metadata inspection, report rendering, checklist validation, and output auditing.
+- The runtime uses only Node.js built-ins and `node:test`; it must not add runtime or dev dependencies.
+- If a target cannot be resolved, the runtime must return `blocked` or `ready-with-unknowns` instead of guessing.
+- Human / LLM judgment is still required for semantic migration advice and final risk assessment.
 
 ## Execution Boundary
 - This skill is analysis-and-report only.
@@ -45,28 +53,34 @@ This skill MUST NEVER run write operations such as:
 ## Workflow
 1. Resolve target baseline (branch head, tag, release, or dependency latest).
 2. Gather current state and target state with read-only commands and file inspection.
-3. Produce structured diff summary:
+3. Read each commit between the current version and latest version with commit metadata and changed-file summary.
+4. Produce structured per-commit analysis:
+   - Commit hash, subject, author/date when available
+   - Changed files or affected areas
+   - User-facing impact and migration relevance
+5. Produce structured diff summary:
    - Breaking / behavior-impacting changes
    - New features
    - Fixes and risk points
    - Dependency-level updates
-4. Extract migration actions for current users:
+6. Extract migration actions for current users:
    - API or CLI usage changes
    - Config changes
    - Environment/runtime changes
    - Build/test/deploy updates
-5. If data is incomplete, state assumptions and confidence level.
-6. Output final report using the template in [templates/report-template.md](./templates/report-template.md).
+7. If data is incomplete, state assumptions and confidence level.
+8. Output final report using the template in [templates/report-template.md](./templates/report-template.md).
 
 ## Output Contract
 Output must contain all sections below in fixed order:
 1. Target compared
-2. Change summary
-3. Dependency update summary
-4. Required migration actions
-5. Optional migration actions
-6. Validation checklist
-7. Risks and rollback hints
+2. Commit-by-commit analysis
+3. Change summary
+4. Dependency update summary
+5. Required migration actions
+6. Optional migration actions
+7. Validation checklist
+8. Risks and rollback hints
 
 ## Safety Rules
 - Never claim a dependency or release note was checked unless evidence exists.
